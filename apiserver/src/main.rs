@@ -1,8 +1,14 @@
 use actix_web::{web, App, HttpServer};
+use helpers::generate_id::Snowflake;
 use log::info;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
-use std::env;
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
 
+pub mod helpers;
+pub mod models;
 pub mod responses;
 pub mod routes;
 pub mod validation_types;
@@ -10,6 +16,7 @@ pub mod validation_types;
 pub struct AppState {
     pub database_connection_pool: Pool<Postgres>,
     pub access_token_secret: String,
+    pub snow_flake: Arc<Mutex<Snowflake>>,
 }
 
 #[actix_web::main]
@@ -20,6 +27,14 @@ async fn main() -> std::io::Result<()> {
     let database_url = env::var("DATABASE_URL").expect("Database url not found in the env file");
     let access_token_secret =
         env::var("ACCESS_SECRET").expect("Database url not found in the env file");
+    let machine_id: u64 = env::var("MACHINE_ID")
+        .expect("Machine id not found in the env file")
+        .parse()
+        .expect("Invalid machine id");
+
+    if machine_id > 1023 {
+        panic!("Machine id should be between 0 and 1024");
+    }
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -34,6 +49,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(AppState {
                 database_connection_pool: pool.clone(),
                 access_token_secret: access_token_secret.clone(),
+                snow_flake: Arc::new(Mutex::new(Snowflake {
+                    machine_id,
+                    counter: 0,
+                })),
             }))
             .service(
                 web::scope("/api/v1/user").route(
