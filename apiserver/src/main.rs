@@ -1,4 +1,5 @@
 use actix_web::{middleware::from_fn, web, App, HttpServer};
+use cloudinary::upload::Upload;
 use helpers::generate_id::Snowflake;
 use log::info;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
@@ -20,6 +21,7 @@ pub struct AppState {
     pub access_token_secret: String,
     pub snow_flake: Arc<Mutex<Snowflake>>,
     pub redis_conn: r2d2::Pool<redis::Client>,
+    pub cloudinary: Arc<Upload>,
 }
 
 #[actix_web::main]
@@ -31,6 +33,12 @@ async fn main() -> std::io::Result<()> {
     let redis_url = env::var("REDIS_URL").expect("Redis url not found in the env file");
     let access_token_secret =
         env::var("ACCESS_SECRET").expect("Database url not found in the env file");
+    let cloudname =
+        env::var("CLOUDINARY_CLOUD_NAME").expect("Cloudinary cloud name not found in the env file");
+    let cloud_api_key =
+        env::var("CLOUDINARY_API_KEY").expect("Cloudinary api key not found in the env file");
+    let cloud_api_secret =
+        env::var("CLOUDINARY_API_SECRET").expect("Cloudinary api secret not found in the env file");
     let machine_id: u64 = env::var("MACHINE_ID")
         .expect("Machine id not found in the env file")
         .parse()
@@ -39,6 +47,8 @@ async fn main() -> std::io::Result<()> {
     if machine_id > 1023 {
         panic!("Machine id should be between 0 and 1024");
     }
+
+    let upload = Arc::new(Upload::new(cloud_api_key, cloudname, cloud_api_secret));
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -65,6 +75,7 @@ async fn main() -> std::io::Result<()> {
                 access_token_secret: access_token_secret.clone(),
                 snow_flake: snowflake.clone(),
                 redis_conn: redis_conn.clone(),
+                cloudinary: upload.clone(),
             }))
             .service(
                 web::scope("/api/v1/user")
@@ -84,6 +95,16 @@ async fn main() -> std::io::Result<()> {
                                 web::get().to(routes::user::current_user::get_current_user),
                             ),
                     ),
+            )
+            .service(
+                web::scope("/api/v1/profile").service(
+                    web::scope("/protected")
+                        .wrap(from_fn(middlewares::auth_middleware::auth_middleware))
+                        .route(
+                            "/add-image",
+                            web::post().to(routes::profile::add_image::add_image),
+                        ),
+                ),
             )
     })
     .bind(("127.0.0.1", 8000))?

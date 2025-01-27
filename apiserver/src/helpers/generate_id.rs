@@ -17,7 +17,6 @@ impl Snowflake {
         let shifted_epoch = epoch << 23;
         let shifted_machine_id = self.machine_id << 13;
         let current_counter = self.counter;
-        println!("The current counter is {:?}", current_counter);
         self.counter = (self.counter + 1) % 8192;
         Ok(shifted_epoch | shifted_machine_id | current_counter)
     }
