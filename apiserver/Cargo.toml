@@ -20,5 +20,5 @@ redis = { version = "0.28.2", features = ["r2d2"] }
 r2d2 = "0.8.10"
 cloudinary = "0.8.1"
 actix-multipart = "0.7.2"
-tokio = "1.43.0"
+tokio = { version = "1.43.0", features = ["full"] }
 mime = "0.3.17"

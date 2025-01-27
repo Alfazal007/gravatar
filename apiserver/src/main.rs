@@ -1,4 +1,7 @@
-use actix_web::{middleware::from_fn, web, App, HttpServer};
+use actix_web::{
+    middleware::{from_fn, Logger},
+    web, App, HttpServer,
+};
 use cloudinary::upload::Upload;
 use helpers::generate_id::Snowflake;
 use log::info;
@@ -70,6 +73,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(web::Data::new(AppState {
                 database_connection_pool: pool.clone(),
                 access_token_secret: access_token_secret.clone(),
