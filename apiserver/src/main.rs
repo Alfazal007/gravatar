@@ -107,6 +107,10 @@ async fn main() -> std::io::Result<()> {
                         .route(
                             "/add-image",
                             web::post().to(routes::profile::add_image::add_image),
+                        )
+                        .route(
+                            "/get-images",
+                            web::get().to(routes::profile::get_images::get_imgages),
                         ),
                 ),
             )
