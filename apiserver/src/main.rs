@@ -118,6 +118,10 @@ async fn main() -> std::io::Result<()> {
                         ),
                 ),
             )
+            .route(
+                "/{email_hash}",
+                web::get().to(routes::profile::fetch_image::get_profile_image),
+            )
     })
     .bind(("127.0.0.1", 8000))?
     .run()
