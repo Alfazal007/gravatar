@@ -5,7 +5,7 @@ pub struct UserFromDB {
     pub id: i64,
     pub email: String,
     pub email_hash: Option<String>,
-    pub active_photo_id: i32,
+    pub active_photo_id: i64,
 }
 
 #[derive(FromRow, serde::Deserialize, Debug, serde::Serialize)]
@@ -14,5 +14,5 @@ pub struct UserFromDBWithPassword {
     pub email: String,
     pub password: String,
     pub email_hash: Option<String>,
-    pub active_photo_id: i32,
+    pub active_photo_id: i64,
 }

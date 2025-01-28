@@ -3,5 +3,5 @@ create table users (
 	email varchar(30) not null unique,
 	password varchar(255) not null,
 	email_hash varchar(255) not null unique,
-	active_photo_id int default -1
+	active_photo_id bigint default -1
 );
